@@ -1,0 +1,10 @@
+record_id,system,category,subject_id,identifiers,fields,state,observed_at
+demo_resurrected-profile,crm,profile,demo_resurrected,{},{},deleted,2026-01-02T10:00:00Z
+demo_resurrected-invoice,billing,invoice,demo_resurrected,{},"{""invoice_id"": ""demo_resurrected-invoice"", ""amount"": 42}",present,2026-01-02T10:00:00Z
+demo_resurrected-profile,crm,profile,,"{""email"": [""old-address@example.invalid""]}","{""email"": ""old-address@example.invalid""}",present,2026-01-03T10:00:00Z
+demo_clean-profile,crm,profile,demo_clean,{},{},deleted,2026-01-02T10:00:00Z
+demo_clean-invoice,billing,invoice,demo_clean,{},"{""invoice_id"": ""demo_clean-invoice"", ""amount"": 42}",present,2026-01-02T10:00:00Z
+demo_retention-profile,crm,profile,demo_retention,{},{},deleted,2026-01-02T10:00:00Z
+demo_retention-invoice,billing,invoice,demo_retention,{},"{""invoice_id"": ""demo_retention-invoice"", ""amount"": 42, ""email"": ""retention@example.invalid""}",present,2026-01-02T10:00:00Z
+demo_restore-profile,crm,profile,demo_restore,{},{},deleted,2026-01-02T10:00:00Z
+demo_restore-invoice,billing,invoice,demo_restore,{},{},deleted,2026-01-02T10:00:00Z

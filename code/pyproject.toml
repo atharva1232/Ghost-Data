@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghosttrace-audit"
+version = "0.1.0"
+description = "Evidence-backed deletion audits with conservative abstention"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+ghosttrace = "ghosttrace.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["ghosttrace*"]

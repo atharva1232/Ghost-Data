@@ -1,0 +1,3 @@
+system,category,action,allowed_fields,required_retain
+crm,profile,DELETE,[],false
+billing,invoice,REDACT,"[""invoice_id"", ""amount""]",true

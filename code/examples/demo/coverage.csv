@@ -1,0 +1,9 @@
+case_id,system,category,records_complete,processes_complete,identities_complete,observed_at
+demo_resurrected,crm,profile,true,true,true,2026-01-03T10:00:00Z
+demo_resurrected,billing,invoice,true,true,true,2026-01-03T10:00:00Z
+demo_clean,crm,profile,true,true,true,2026-01-03T10:00:00Z
+demo_clean,billing,invoice,true,true,true,2026-01-03T10:00:00Z
+demo_retention,crm,profile,true,true,true,2026-01-03T10:00:00Z
+demo_retention,billing,invoice,true,true,true,2026-01-03T10:00:00Z
+demo_restore,crm,profile,true,true,true,2026-01-03T10:00:00Z
+demo_restore,billing,invoice,true,true,true,2026-01-03T10:00:00Z

@@ -1,0 +1,5 @@
+process_id,source_system,target_system,subject_id,active,can_recreate,blocked,observed_at
+demo_resurrected-sync,billing,crm,demo_resurrected,true,true,false,2026-01-02T10:00:00Z
+demo_clean-sync,billing,crm,demo_clean,true,true,true,2026-01-02T10:00:00Z
+demo_retention-sync,billing,crm,demo_retention,true,true,true,2026-01-02T10:00:00Z
+demo_restore-sync,billing,crm,demo_restore,true,true,true,2026-01-02T10:00:00Z

@@ -1,0 +1,6 @@
+subject_id,identifier_type,identifier_value,verified,observed_at
+demo_resurrected,email,resurrected@example.invalid,true,2026-01-01T10:00:00Z
+demo_resurrected,email,old-address@example.invalid,true,2026-01-01T10:00:00Z
+demo_clean,email,clean@example.invalid,true,2026-01-01T10:00:00Z
+demo_retention,email,retention@example.invalid,true,2026-01-01T10:00:00Z
+demo_restore,email,restore@example.invalid,true,2026-01-01T10:00:00Z
