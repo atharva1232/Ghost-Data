@@ -2,6 +2,16 @@
 
 Requires Python 3.11+. No third-party runtime dependencies.
 
+Start the complete local dashboard from this directory:
+
+```powershell
+python start_app.py --open
+```
+
+Or double-click START_GHOSTTRACE.cmd in the repository root. The local app includes evidence uploads, audit execution, request search/filtering, provenance and remediation views, run history, report downloads, evaluation, and optional AI review. It starts at http://127.0.0.1:8765. Stop it with Ctrl+C in its console.
+
+The code ZIP includes dashboard assets. If demo files are absent after extraction, start_app.py regenerates them automatically. Upload organizer CSVs through the app or put the supplied dataset next to code/ as dataset/.
+
 From this directory:
 
 ```powershell

@@ -2,7 +2,33 @@
 
 **An evidence-backed agent for the “Ghost Data Still Exists” hackathon.**
 
-GhostTrace investigates deletion requests, links historical identifiers, checks policy treatments and retention, flags sync/import/restore risks, and generates ordered remediation with source references. It produces a portable, searchable HTML audit workspace and machine-readable reports.
+GhostTrace investigates deletion requests, links historical identifiers, checks policy treatments and retention, flags sync/import/restore risks, and generates ordered remediation with source references. It includes a local dashboard, Python backend, CSV/media uploads, saved investigations, evaluation, and downloadable reports.
+
+## Start the app
+
+**Windows:** double-click **START_GHOSTTRACE.cmd** in this folder. It launches the app and opens your browser at **http://127.0.0.1:8765**. Keep its console open while using the app; press Ctrl+C there to stop.
+
+Alternatively, from the repository root:
+
+```powershell
+python code/start_app.py --open
+```
+
+Requires Python 3.11+. There is no pip install, database setup, npm install, or API key requirement for the offline workflow. If port 8765 is occupied, run `python code/start_app.py --port 8766 --open`.
+
+### What works in the dashboard
+
+- **Overview:** select the built-in synthetic demo, the 518 organizer requests, or uploaded evidence; run an audit; review verdicts and input readiness.
+- **Audit requests:** search by case ID/email/alias, filter verdicts, and inspect request text, identity links, findings, recreation paths, ordered remediation, retained records, proof, and timeline.
+- **Evidence sources:** see available/missing evidence files, a contract overview, and SHA-256 input fingerprints.
+- **Add evidence:** upload a fresh workspace with deletion_requests.csv plus supporting normalized evidence CSVs. Optional expected.csv is used only for evaluation. Uploads persist locally, do not overwrite existing datasets, and are limited to 16 MB total / 60 files. Mark synthetic uploads as demo evidence. Media is inventoried and flagged for extraction/review.
+- **Evaluation:** compare against separate reference labels and inspect accuracy, abstentions, false COMPLETE predictions, confusion matrix, and mismatches. Demo evaluation is always labeled synthetic.
+- **Downloads and history:** save internal audit CSV, full JSON, and standalone HTML reports; reopen previous investigations.
+- **AI second look:** if OPENAI_API_KEY is set before launch, enter a supported model ID in a case detail to request an advisory review. The app explicitly indicates that findings are sent to OpenAI. Deterministic verdicts remain unchanged.
+
+Runs and uploads are stored in `artifacts/app/` and excluded from Git. The local app binds only to 127.0.0.1. It has no user accounts, multi-user access control, or production hosting. This is a hackathon application.
+
+See [DEMO_GUIDE.md](DEMO_GUIDE.md) for a short presentation walkthrough.
 
 ## Current state — read this first
 
@@ -12,11 +38,11 @@ The supplied organizer file has **518 requests** with these columns:
 
 It does **not** contain the system records, historical identity links, deletion rules, local media, reference labels, or the exact output schema from `problem_statement.md`. Reported statuses describe what a dashboard claims; they are not ground truth. The attached screenshots explicitly warn that a reported COMPLETE can conceal residual data.
 
-The project therefore includes a working, tested **prototype and evidence contract**, not a claim to have solved the hidden cases. With the supplied file alone, most requests receive the internal abstention `REVIEW_REQUIRED`. This is intentionally **not** a fourth competition label. Unsupported languages and ambiguous request intent also abstain. The current English rule baseline identifies a few explicit non-deletion requests; these still need organizer validation.
+The project therefore includes a working, tested **local application and evidence contract**, not a claim to have solved the hidden cases. With the supplied file alone, most requests receive the internal abstention `REVIEW_REQUIRED`. This is intentionally **not** a fourth competition label. Unsupported languages and ambiguous request intent also abstain. The current English rule baseline identifies a few explicit non-deletion requests; these still need organizer validation.
 
 The synthetic demo exercises real code paths but cannot measure performance on the organizer dataset. Exact competition export requires the missing specification and evidence. Do not submit `audit.csv` as the official predictions file.
 
-## Run now
+## Command-line workflow
 
 Requires Python 3.11 or later. Offline operation needs no packages, credentials, or installation.
 
@@ -94,6 +120,8 @@ The evaluation command reads labels separately from prediction, reports status a
 
 Regression tests cover historical aliases, resurrection, retained PII, missing required retention, future observations, stale evidence, ambiguous identities, global restore paths, malformed inputs, media gaps, HTML escaping, and export guards.
 
+Application tests additionally exercise real HTTP endpoints, persistent run history, all download formats, valid/invalid uploads, synthetic-data labels, evaluation isolation, and host/origin/path restrictions. On restricted agent sandboxes, localhost tests may require permission to connect to their temporary test server.
+
 ## Competition export and packaging
 
 When all real cases are resolved and the exact official schema is available, create a JSON object mapping each official CSV column to an internal audit field, then run:
@@ -112,11 +140,16 @@ Packaging creates `dist/code.zip` with the `code/` directory, excluding datasets
 ```text
 dataset/deletion_requests.csv   Supplied organizer requests, unchanged
 code/ghosttrace/                Audit engine, CLI, optional AI review, HTML report
+code/ghosttrace/web/            Dashboard HTML, CSS, JavaScript, and local favicon
+code/ghosttrace/server.py       Local HTTP application and upload/run storage
+code/ghosttrace/service.py      Shared audit and evaluation operations
+code/start_app.py               Launcher usable from any working directory
+START_GHOSTTRACE.cmd            One-click Windows launcher
 code/tests/                    Synthetic regression tests
 code/examples/demo/             Explicitly synthetic evidence
 code/make_demo.py               Reproducible synthetic demo generator
 code/package_submission.py      Code-only ZIP builder
-artifacts/                     Generated local results (ignored by Git)
+artifacts/                     Generated local results and uploads (ignored by Git)
 ```
 
 ## Remaining hackathon work

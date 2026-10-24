@@ -14,7 +14,7 @@ def package():
             if not path.is_file() or any(part.startswith(".") or part in (
                     "__pycache__", "node_modules", "artifacts", "dataset", "data", "dist", "build") for part in rel.parts):
                 continue
-            if path.suffix not in (".py", ".md", ".toml", ".txt", ".json") or "examples" in rel.parts:
+            if path.suffix not in (".py", ".md", ".toml", ".txt", ".json", ".html", ".js", ".css", ".svg") or "examples" in rel.parts:
                 continue
             archive.write(path, Path("code") / rel)
     print(target)
