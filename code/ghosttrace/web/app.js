@@ -111,7 +111,8 @@ function renderOverview() {
   notice.classList.toggle('hidden', !data);
   if (data) notice.textContent = data.summary.demo
     ? 'Synthetic demonstration. These cases show the audit workflow; their findings and accuracy do not describe the organizer dataset.'
-    : `${counts.REVIEW_REQUIRED || 0} requests need more evidence or intent review. This is a provisional internal report; the official competition schema is still required.`;
+    : data.summary.official ? 'Official participant evidence audited. Download output.csv from Audit requests. Schema validation does not guarantee hidden-answer accuracy.'
+    : `${counts.REVIEW_REQUIRED || 0} requests need more evidence or intent review. This is an internal audit report.`;
   $('fingerprints').replaceChildren();
   if (!data) $('fingerprints').append(empty('Run an audit to fingerprint its inputs.'));
   else for (const file of data.summary.inputs) {
@@ -119,7 +120,7 @@ function renderOverview() {
     line.append(node('strong', file.file), node('span', ' · ' + file.bytes.toLocaleString() + ' bytes', 'mini-label'), node('code', file.sha256));
     $('fingerprints').append(line);
   }
-  document.querySelectorAll('[data-download]').forEach(b => { b.disabled = !data; });
+  document.querySelectorAll('[data-download]').forEach(b => { b.disabled = !data || (b.dataset.download === 'submission' && !data.summary.official); });
 }
 function renderHistory() {
   $('history').replaceChildren();
@@ -140,6 +141,7 @@ function resetEvaluation() {
   const ws = currentWorkspace();
   $('eval-note').textContent = ws?.demo
     ? 'Synthetic evaluation only. The demo reference labels exercise expected behavior and do not establish accuracy on organizer data.'
+    : state.data?.summary.official ? 'Evaluation uses the 32 public samples, independently of the 518 submission requests. Hidden-case accuracy is unknown.'
     : ws?.has_labels ? 'Reference labels are available. Evaluation is separate from prediction.' : 'No reference labels supplied. Include expected.csv with case_id,status in an uploaded workspace to evaluate.';
 }
 async function refreshWorkspaces(selected) {
@@ -259,6 +261,12 @@ async function evaluateRun() {
     metric('Labeled requests', result.labeled_cases, result.demo ? 'Synthetic cases only' : 'Supplied reference cases', ''),
     metric('False complete', result.false_complete, 'Predicted complete but reference disagrees', 'red'),
     metric('Abstentions', result.abstentions, 'Requests needing more evidence', 'amber'));
+  if (result.step_accuracy !== undefined) {
+    cards.append(metric('Exact step accuracy', (result.step_accuracy * 100).toFixed(1) + '%', 'Aligned public-reference steps', ''),
+      metric('Field accuracy', (result.field_accuracy * 100).toFixed(1) + '%', 'Seven fields per aligned step', ''),
+      metric('Sequence accuracy', (result.sequence_accuracy * 100).toFixed(1) + '%', 'Exact full step arrays', ''));
+    $('eval-note').textContent = result.scope;
+  }
   const panel = node('section', undefined, 'panel evaluation-panel'), heading = node('div', undefined, 'panel-heading');
   heading.append(node('h2', 'Confusion matrix'), node('span', result.demo ? 'SYNTHETIC EVALUATION' : 'REFERENCE EVALUATION', 'mini-label'));
   panel.append(heading, makeTable(['Reference', 'Prediction', 'Requests'], result.confusion_matrix.map(row => [badge(row.expected), badge(row.predicted), row.count])));

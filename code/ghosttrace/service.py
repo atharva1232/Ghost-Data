@@ -16,6 +16,11 @@ STATUSES = {"COMPLETE", "INCOMPLETE", "NOT_APPLICABLE"}
 
 def readiness(root):
     root = Path(root)
+    if is_official(root):
+        return [{'filename': name, 'available': (root / name).is_file(), 'role': role} for name, role in [
+            ('deletion_requests.csv', 'Requests to investigate'), ('user_identities.csv', 'Current identities'),
+            ('user_audit_log.csv', 'Historical identifier changes'), ('deletion_rules.csv', 'Official deletion and retention policy'),
+            ('system_activity.csv', 'Global operational claims and resource links'), ('evidence_files.csv', 'Local multimodal evidence manifest')]]
     return [{"filename": f"{name}.csv", "available": (root / f"{name}.csv").is_file(),
              "role": role} for name, role in [
         ("deletion_requests", "Requests to investigate"),
@@ -26,10 +31,62 @@ def readiness(root):
         ("coverage", "Evidence search completeness at audit time")]]
 
 
+def is_official(root):
+    return (Path(root) / 'user_identities.csv').is_file() and (Path(root) / 'evidence_files.csv').is_file()
+
+
+def official_audit(root, output):
+    from .official import OfficialCorpus, rows, write_output
+    corpus = OfficialCorpus(root, output.parent / 'extractions')
+    requests = rows(root / 'deletion_requests.csv')
+    answers = [corpus.solve(request) for request in requests]
+    results = []
+    for request, answer in zip(requests, answers):
+        steps = answer['steps_json']
+        findings = [s for s in steps if s['phase'] == 'FINDING']
+        repairs = [s for s in steps if s['phase'] == 'REMEDIATION']
+        checks = [s for s in steps if s['phase'] == 'VERIFICATION']
+        resources = {(s['system_id'], s['resource_id']) for s in steps}
+        observations = [o for key in resources for o in corpus.by_resource.get(key, []) if request['requested_at'] <= o.at <= request['audit_at'] and o.available <= request['audit_at']]
+        result = {'case_id': answer['case_id'], 'status': answer['deletion_status'],
+            'intent': 'NON_DELETION' if answer['deletion_status'] == 'NOT_APPLICABLE' else 'DELETION',
+            'reported_status': request['reported_status'], 'identifiers': [{'type': 'request_email', 'value': request['email']}],
+            'findings': [{'type': s['operation'], 'description': s['operation'].replace('_', ' ').capitalize(),
+                         'record_id': s['resource_id'], 'system': s['system_id'], 'source': s['evidence_id']} for s in findings],
+            'recreation_paths': [{'process_id': s['resource_id'], 'from': s['system_id'], 'to': 'downstream / restore target', 'source': s['evidence_id']}
+                                 for s in findings if s['operation'] in ('REPORT_ACTIVE_DATA_FLOW', 'REPORT_RESTORE_RISK')],
+            'retained_records': [s['resource_id'] for s in checks if s['operation'] == 'VERIFY_RECORD_PRESENT'],
+            'remediation': [{'step': i, 'action': f"{s['operation']}: {s['system_id']}/{s['resource_id']}", 'source': 'Proposed action'} for i, s in enumerate(repairs, 1)],
+            'proof': [{'description': ('Required future check, not yet passed: ' if answer['deletion_status'] == 'INCOMPLETE' else '') + f"{s['operation']}: {s['resource_id']}",
+                       'source': s['evidence_id'] or 'Future verification'} for s in checks],
+            'gaps': [], 'timeline': [{'at': o.at, 'description': f'{o.system}/{o.resource}: {o.state}', 'source': o.evidence} for o in sorted(observations, key=lambda o: (o.at, o.resource))],
+            'request_source': 'deletion_requests.csv', 'request': {'email': request['email'], 'text': request['request_text'], 'requested_at': request['requested_at'], 'audit_at': request['audit_at']},
+            'official_steps': steps}
+        if result['intent'] == 'DELETION':
+            _, identifiers = corpus.identity(request['email'], request['audit_at'])
+            result['identifiers'] = [{'type': 'resolved_identifier', 'value': v} for v in sorted(identifiers)]
+        results.append(result)
+    output.mkdir(parents=True, exist_ok=True)
+    write_output(output / 'output.csv', answers)
+    summary = {'version': __version__, 'demo': False, 'official': True, 'requests': len(results),
+               'counts': dict(collections.Counter(r['status'] for r in results)), 'competition_ready': True,
+               'schema_note': 'Official three-column output.csv is available; prediction accuracy is evaluated on public samples only.',
+               'ai_reviews': 0, 'inputs': manifest(root), 'readiness': readiness(root),
+               'findings': sum(len(r['findings']) for r in results), 'recreation_paths': sum(len(r['recreation_paths']) for r in results)}
+    data = {'summary': summary, 'results': results}
+    write_json(output / 'audit.json', data)
+    write_json(output / 'summary.json', summary)
+    write_csv(output / 'audit.csv', results, AUDIT_COLUMNS)
+    render_report(output / 'report.html', results, summary)
+    return data
+
+
 def perform_audit(root, output):
     root, output = Path(root).resolve(), Path(output).resolve()
     if root == output or root in output.parents:
         raise InputError("Output directory must be outside the dataset")
+    if is_official(root):
+        return official_audit(root, output)
     corpus = Corpus(root)
     results = audit_all(corpus)
     for result, request in zip(results, corpus.requests):

@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghosttrace-audit"
-version = "0.2.0"
+version = "1.0.0"
 description = "Evidence-backed deletion audits with conservative abstention"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["pypdf>=6.10,<7"]
 
 [project.scripts]
 ghosttrace = "ghosttrace.__main__:main"
@@ -16,4 +16,4 @@ ghosttrace = "ghosttrace.__main__:main"
 include = ["ghosttrace*"]
 
 [tool.setuptools.package-data]
-ghosttrace = ["web/*.html", "web/*.css", "web/*.js", "web/*.svg"]
+ghosttrace = ["web/*.html", "web/*.css", "web/*.js", "web/*.svg", "ocr_windows.ps1"]

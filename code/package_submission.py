@@ -14,9 +14,16 @@ def package():
             if not path.is_file() or any(part.startswith(".") or part in (
                     "__pycache__", "node_modules", "artifacts", "dataset", "data", "dist", "build") for part in rel.parts):
                 continue
-            if path.suffix not in (".py", ".md", ".toml", ".txt", ".json", ".html", ".js", ".css", ".svg") or "examples" in rel.parts:
+            if path.suffix not in (".py", ".md", ".toml", ".txt", ".json", ".html", ".js", ".css", ".svg", ".ps1") or "examples" in rel.parts:
                 continue
             archive.write(path, Path("code") / rel)
+        archive.write(code / 'README.md', 'README.md')
+        archive.write(code / 'requirements.txt', 'requirements.txt')
+        for name in ('evaluation_report.md', 'usage_report.md'):
+            report = code / 'evaluation' / name
+            if not report.is_file():
+                raise RuntimeError('Required report missing: ' + name)
+            archive.write(report, Path('evaluation') / name)
     print(target)
 
 

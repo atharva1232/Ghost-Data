@@ -16,7 +16,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .engine import Corpus, TABLES
 from .io import InputError, write_json
-from .service import evaluate_results, perform_audit, readiness
+from .service import evaluate_results, perform_audit, readiness, is_official
 
 
 MAX_UPLOAD = 24 * 1024 * 1024
@@ -43,8 +43,12 @@ class Store:
         for key, label, root in roots:
             if not (root / "deletion_requests.csv").is_file():
                 continue
-            corpus = Corpus(root)
-            result.append({"id": key, "name": label, "demo": (root / "SYNTHETIC_DEMO").is_file(), "requests": len(corpus.requests),
+            if is_official(root):
+                from .official import rows
+                count = len(rows(root / 'deletion_requests.csv'))
+            else:
+                count = len(Corpus(root).requests)
+            result.append({"id": key, "name": label, "demo": (root / "SYNTHETIC_DEMO").is_file(), "requests": count,
                            "readiness": readiness(root), "has_labels": (root / "expected.csv").is_file()})
         return result
 
@@ -172,7 +176,7 @@ def make_handler(store):
                     root = store.run_path(match[1])
                     if match[2]:
                         kind = parse_qs(urlsplit(self.path).query).get("format", ["csv"])[0]
-                        names = {"csv": ("audit.csv", "text/csv; charset=utf-8"),
+                        names = {"csv": ("audit.csv", "text/csv; charset=utf-8"), 'submission': ('output.csv', 'text/csv; charset=utf-8'),
                                  "json": ("audit.json", "application/json"), "html": ("report.html", "text/html; charset=utf-8")}
                         if kind not in names:
                             raise InputError("Unsupported export format")
@@ -212,7 +216,22 @@ def make_handler(store):
                     root = store.run_path(payload.get("run_id"))
                     metadata = json.loads((root / "run.json").read_text(encoding="utf-8"))
                     data = json.loads((root / "audit.json").read_text(encoding="utf-8"))
-                    expected = store.workspace_path(metadata["workspace"]) / "expected.csv"
+                    workspace = store.workspace_path(metadata['workspace'])
+                    if is_official(workspace):
+                        from main import metrics
+                        from .official import OfficialCorpus, rows
+                        corpus = OfficialCorpus(workspace, store.root / 'extractions')
+                        answers = [corpus.solve(r) for r in rows(workspace / 'sample_deletion_requests.csv')]
+                        score = metrics(rows(workspace / 'sample_output.csv'), answers)
+                        failures = [{'case_id': r['case_id'], 'expected': r['expected']['deletion_status'], 'predicted': r['predicted']['deletion_status']} for r in score['failures']]
+                        result = {'labeled_cases': score['cases'], 'accuracy_including_abstentions': score['status_accuracy'],
+                                  'prediction_coverage': 1, 'abstentions': 0, 'false_complete': sum(r['expected']['deletion_status'] != 'COMPLETE' and r['predicted']['deletion_status'] == 'COMPLETE' for r in score['failures']),
+                                  'failures': failures, 'confusion_matrix': [], 'demo': False,
+                                  'scope': '32 public samples; hidden-case accuracy is unknown',
+                                  'step_accuracy': score['step_accuracy'], 'field_accuracy': score['field_accuracy'], 'sequence_accuracy': score['sequence_accuracy']}
+                        write_json(root / 'evaluation.json', result)
+                        return self.send_json(result)
+                    expected = workspace / "expected.csv"
                     if not expected.exists():
                         raise InputError("No reference labels supplied. Upload expected.csv with case_id,status to evaluate.")
                     result = evaluate_results(data["results"], expected)

@@ -8,3 +8,6 @@ artifacts/
 dist/
 *.zip
 .pytest_cache/
+/log.txt
+/output.csv
+/submission/
