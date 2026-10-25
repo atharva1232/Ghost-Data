@@ -38,7 +38,7 @@ async function action(button, task, busyText) {
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + name));
   document.querySelectorAll('.nav').forEach(v => v.classList.toggle('active', v.dataset.view === name));
-  $('page-title').textContent = {overview: 'Overview', requests: 'Audit requests', evidence: 'Evidence sources', evaluation: 'Evaluation', presentation: 'Judge walkthrough'}[name];
+  $('page-title').textContent = {overview: 'Overview', requests: 'Audit requests', evidence: 'Evidence sources', evaluation: 'Evaluation'}[name];
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 function currentWorkspace() { return state.workspaces.find(w => w.id === $('workspace').value); }
@@ -87,7 +87,6 @@ function metric(label, value, description, className, symbol = '◎') {
   return card;
 }
 function renderOverview() {
-  renderPresentationRun();
   const data = state.data, total = data?.results.length ?? 0, counts = data?.summary.counts || {};
   $('nav-count').textContent = String(total);
   $('metrics').replaceChildren(
@@ -313,55 +312,6 @@ document.querySelectorAll('[data-download]').forEach(button => button.onclick = 
   const link = node('a'); link.href = '/api/runs/' + state.data.run.id + '/download?format=' + button.dataset.download;
   link.download = ''; document.body.append(link); link.click(); link.remove();
 });
-
-let chapterIndex = 0;
-const chapters = [...document.querySelectorAll('.pitch-slide')];
-function showChapter(index) {
-  chapterIndex = Math.max(0, Math.min(chapters.length - 1, index));
-  chapters.forEach((slide, i) => slide.classList.toggle('hidden', i !== chapterIndex));
-  [...$('pitch-nav').children].forEach((button, i) => {
-    button.classList.toggle('active', i === chapterIndex);
-    if (i === chapterIndex) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
-  });
-  $('pitch-progress').textContent = String(chapterIndex + 1).padStart(2, '0') + ' / 06';
-  $('pitch-prev').disabled = chapterIndex === 0;
-  $('pitch-next').disabled = chapterIndex === chapters.length - 1;
-}
-function renderPresentationRun() {
-  const data = state.data;
-  $('pitch-live-metrics').replaceChildren(
-    metric('Requests investigated', data?.results.length ?? '—', data?.summary.demo ? 'Synthetic demonstration' : 'Selected audit run', ''),
-    metric('Incomplete', data?.summary.counts.INCOMPLETE ?? '—', 'Solver verdicts', 'red'),
-    metric('Recreation paths', data?.summary.recreation_paths ?? '—', 'Detected active processes', 'amber'));
-  const candidate = data?.results.find(row => row.status === 'INCOMPLETE' && row.recreation_paths.length)
-    || data?.results.find(row => row.status === 'INCOMPLETE');
-  $('pitch-investigate').disabled = !candidate;
-  $('pitch-case').textContent = candidate
-    ? (data.summary.demo ? 'SYNTHETIC DEMO · ' : 'SELECTED RUN · ') + candidate.case_id + ' · ' + candidate.findings.length + ' findings · ' + candidate.recreation_paths.length + ' recreation paths. Inspect the cited evidence before accepting this verdict.'
-    : 'Run an audit from Overview to populate an incomplete case for the live demonstration.';
-  $('pitch-investigate').onclick = () => {
-    if (!candidate) return;
-    state.selected = candidate.case_id;
-    $('search').value = ''; $('status-filter').value = '';
-    renderRequests(); showView('requests');
-  };
-}
-chapters.forEach((slide, i) => {
-  const button = node('button', undefined, 'chapter-button');
-  button.append(node('span', String(i + 1).padStart(2, '0')), node('strong', slide.dataset.chapter));
-  button.onclick = () => showChapter(i); $('pitch-nav').append(button);
-});
-$('present-open').onclick = () => showView('presentation');
-$('pitch-prev').onclick = () => showChapter(chapterIndex - 1);
-$('pitch-next').onclick = () => showChapter(chapterIndex + 1);
-$('print-presentation').onclick = () => window.print();
-document.addEventListener('keydown', event => {
-  if ($('view-presentation').classList.contains('hidden') || $('upload-dialog').open || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
-  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
-    event.preventDefault(); showChapter(chapterIndex + (event.key === 'ArrowRight' ? 1 : -1));
-  }
-});
-showChapter(0);
 
 (async () => {
   try {
