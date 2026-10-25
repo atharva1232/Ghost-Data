@@ -78,3 +78,7 @@ No organizer-only truth, generator internals, hidden answers, or case-number pat
 - `log.txt`: agent log and a labeled retrospective recovery of earlier user-facing development turns. Earlier prototype turns were not logged contemporaneously; the recovery preserves authentic conversation text rather than fabricating history.
 
 Submit at https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists .
+
+## Judge walkthrough
+
+Launch the local app and select **Present project** for a six-chapter walkthrough, live case inspection, and print-friendly slides. See [JUDGE_GUIDE.md](code/JUDGE_GUIDE.md) for the pitch, demo steps, and interview questions (inside the code directory, open JUDGE_GUIDE.md directly). Recorded metrics are labeled as public development results; no judge score is predicted.
